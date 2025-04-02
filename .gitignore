@@ -67,3 +67,4 @@ package-lock.json
 /server/.env
 /backend/__pycache__
 /backend/venv
+/backend/data

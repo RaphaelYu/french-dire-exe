@@ -1,0 +1,1 @@
+curl -X POST -H "Content-Type: application/json" -d @example.gen.json 127.0.0.1:8000
