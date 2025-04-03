@@ -1,12 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
 import { backend_domain } from './consts';
+
+interface WordSegment {
+  word: string;
+  start: number;
+  end: number;
+}
+
 export default function VoiceGenerator() {
   const [text, setText] = useState('');
   const [audioSrc, setAudioSrc] = useState('');
+  const [subtitle, setSubtitle] = useState<WordSegment[]>([]);
+  const [currentWordIndex, setCurrentWordIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [sentences, setSentences] = useState<string[]>([]);
-  const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
 
   const generateVoice = async () => {
     setLoading(true);
@@ -14,18 +21,23 @@ export default function VoiceGenerator() {
       const response = await fetch(`http://${backend_domain}:8000/generate-voice`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text ,  voice: "fr-FR-DeniseNeural",
-          rate: "+0%"}),
+        body: JSON.stringify({
+          text,
+          voice: "fr-FR-DeniseNeural",
+          rate: "+0%"
+        }),
       });
 
       const data = await response.json();
-      setAudioSrc(`http://${backend_domain}:8000/voice/${data.filepath}`);
+      const audioUrl = `http://${backend_domain}:8000/voice/${data.audio}`;
+      const subtitleUrl = `http://${backend_domain}:8000/subtitles/${data.subtitle}`;
 
-      
-      const splitSentences = text.split(/(?<=\.|\?|!)/).map(s => s.trim()).filter(Boolean);
-      console.log(`there are ${splitSentences.length}`)
-      setSentences(splitSentences);
-      setCurrentSentenceIndex(0);
+      setAudioSrc(audioUrl);
+
+      const subtitleResponse = await fetch(subtitleUrl);
+      const subtitleData: WordSegment[] = await subtitleResponse.json();
+      setSubtitle(subtitleData);
+      setCurrentWordIndex(null);
     } catch (error) {
       alert("Failed to generate voice: " + error);
     } finally {
@@ -33,14 +45,19 @@ export default function VoiceGenerator() {
     }
   };
 
-  
   const handleTimeUpdate = () => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !subtitle.length) return;
 
-    const progress = audio.currentTime / audio.duration;
-    const index = Math.floor(progress * sentences.length);
-    setCurrentSentenceIndex(index);
+    const currentTime = audio.currentTime;
+    const current = subtitle.findIndex(
+      (seg) => currentTime >= seg.start && currentTime < seg.end
+    );
+   
+    if (current !== -1 && current !== currentWordIndex) {
+      console.log(`timupdate ${currentTime} ${current}`)
+      setCurrentWordIndex(current);
+    }
   };
 
   useEffect(() => {
@@ -53,8 +70,8 @@ export default function VoiceGenerator() {
         audio.removeEventListener('timeupdate', handleTimeUpdate);
       }
     };
-  }, [sentences]);
-
+  }, [subtitle, currentWordIndex]);
+  console.log(`update current idx is ${currentWordIndex}`)
   return (
     <div className="p-6">
       <textarea
@@ -71,23 +88,24 @@ export default function VoiceGenerator() {
       >
         {loading ? 'Generating...' : 'Generate Voice'}
       </button>
-
+     
       {audioSrc && (
         <>
-          <audio ref={audioRef} controls autoPlay src={audioSrc} className="mt-6 w-full">
-            Your browser does not support audio playback.
-          </audio>
-          <div className="mt-4 border-t pt-4 text-xl">
-            {sentences.map((sentence, idx) => (
-              <p
+          <audio ref={audioRef} controls autoPlay src={audioSrc} className="mt-6 w-full" />
+          <div className="mt-4 border-t pt-4 text-xl flex flex-wrap gap-2">
+            {subtitle.map((seg, idx) => (
+              <span
                 key={idx}
                 style={{
-                  color: idx === currentSentenceIndex ? 'blue' : 'gray',
-                  fontWeight: idx === currentSentenceIndex ? 'bold' : 'normal'
+                  color: idx === currentWordIndex ? '#ffffff' : '#666666',
+                  backgroundColor: idx === currentWordIndex ? '#007bff' : undefined,
+                  fontWeight: idx === currentWordIndex ? 'bold' : 'normal',
+                  padding: '2px 6px',
+                  borderRadius: '4px'
                 }}
               >
-                {sentence}
-              </p>
+                {seg.word + ' '}
+              </span>
             ))}
           </div>
         </>
