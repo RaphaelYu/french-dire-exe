@@ -103,6 +103,12 @@ export default function VoiceGenerator() {
                   padding: '2px 6px',
                   borderRadius: '4px'
                 }}
+                onClick={() => {
+                  if (audioRef.current) {
+                    audioRef.current.currentTime = seg.start;
+                    audioRef.current.play();
+                  }
+                }}
               >
                 {seg.word + ' '}
               </span>
