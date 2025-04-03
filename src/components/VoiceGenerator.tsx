@@ -71,46 +71,100 @@ export default function VoiceGenerator() {
       }
     };
   }, [subtitle, currentWordIndex]);
-  console.log(`update current idx is ${currentWordIndex}`)
-  return (
-    <div className="p-6">
+  console.log(`update current idx is ${currentWordIndex}`);
+  return  (
+    <div
+      style={{
+        padding: '1rem',
+        maxWidth: '800px',
+        margin: '0 auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.5rem',
+      }}
+    >
       <textarea
-        className="border rounded w-full p-4"
+        style={{
+          width: '100%',
+          minHeight: '140px',
+          padding: '1rem',
+          fontSize: '1rem',
+          borderRadius: '8px',
+          border: '1px solid #ccc',
+          resize: 'vertical',
+        }}
         placeholder="Enter French text here..."
-        rows={8}
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
+  
       <button
-        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
-        onClick={generateVoice}
+        style={{
+          backgroundColor: '#007bff',
+          color: '#fff',
+          fontWeight: 'bold',
+          padding: '0.75rem 1.5rem',
+          borderRadius: '6px',
+          fontSize: '1rem',
+          border: 'none',
+          alignSelf: 'flex-start',
+          cursor: loading ? 'wait' : 'pointer',
+          opacity: loading || !text ? 0.6 : 1,
+        }}
         disabled={loading || !text}
+        onClick={generateVoice}
       >
         {loading ? 'Generating...' : 'Generate Voice'}
       </button>
-     
+  
       {audioSrc && (
         <>
-          <audio ref={audioRef} controls autoPlay src={audioSrc} className="mt-6 w-full" />
-          <div className="mt-4 border-t pt-4 text-xl flex flex-wrap gap-2">
+          <audio
+            ref={audioRef}
+            controls
+            autoPlay
+            src={audioSrc}
+            style={{ width: '100%' }}
+          />
+  
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              rowGap: '0.6rem',
+              columnGap: '0.6rem',
+              marginTop: '1rem',
+              fontSize: 'clamp(1rem, 2.5vw, 1.5rem)',
+              lineHeight: '2rem',
+              paddingTop: '1rem',
+              borderTop: '1px solid #ccc',
+              maxHeight: '40vh',
+              overflowY: 'auto',
+            }}
+          >
             {subtitle.map((seg, idx) => (
               <span
                 key={idx}
-                style={{
-                  color: idx === currentWordIndex ? '#ffffff' : '#666666',
-                  backgroundColor: idx === currentWordIndex ? '#007bff' : undefined,
-                  fontWeight: idx === currentWordIndex ? 'bold' : 'normal',
-                  padding: '2px 6px',
-                  borderRadius: '4px'
-                }}
                 onClick={() => {
                   if (audioRef.current) {
                     audioRef.current.currentTime = seg.start;
                     audioRef.current.play();
                   }
                 }}
+                style={{
+                  color: idx === currentWordIndex ? '#ffffff' : '#444444',
+                  backgroundColor:
+                    idx === currentWordIndex ? '#007bff' : undefined,
+                  fontWeight: idx === currentWordIndex ? 'bold' : 'normal',
+                  padding: '6px 10px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'keep-all',
+                  transition: 'background-color 0.2s ease',
+                }}
               >
-                {seg.word + ' '}
+                {seg.word}
               </span>
             ))}
           </div>
@@ -118,4 +172,5 @@ export default function VoiceGenerator() {
       )}
     </div>
   );
+  
 }
